@@ -15,16 +15,18 @@ class PricePage extends StatefulWidget {
 class _PricePageState extends State<PricePage> {
   ExchangeHandler exchangeHandler = ExchangeHandler();
   String selectedCurrency = 'USD';
+  List<CoinCard> coinCards = [];
 
   Widget getCupertinoPicker() {
     return CupertinoPicker(
       itemExtent: 32.0,
       children: [
-        for (String item in constants.currency) Text(item),
+        for (String item in constants.currencies) Text(item),
       ],
       onSelectedItemChanged: (index) {
         setState(() {
-          selectedCurrency = constants.currency[index];
+          selectedCurrency = constants.currencies[index];
+          updateExchangeRateCards(selectedCurrency);
         });
       },
     );
@@ -34,26 +36,54 @@ class _PricePageState extends State<PricePage> {
     return DropdownButton<String>(
       value: selectedCurrency,
       items: [
-        for (String item in constants.currency)
+        for (String item in constants.currencies)
           DropdownMenuItem(child: Text(item), value: item),
       ],
       onChanged: (value) {
         setState(() {
-          selectedCurrency = value ?? 'USD ';
+          selectedCurrency = value ?? 'USD';
+          updateExchangeRateCards(selectedCurrency);
         });
       },
     );
   }
 
+  void initExchangeRateCards(String currency) async {
+    dynamic response = await exchangeHandler.getExchangeRateInfo(currency);
+    for (var item in response['rates']) {
+      String coin = item['asset_id_quote'];
+      if (constants.coins.contains(coin)) {
+        double rate = item['rate'];
+        String exchangeRateString =
+            '1 $coin = ${rate.toStringAsFixed(6)} $currency';
+        coinCards.add(CoinCard(
+          label: exchangeRateString,
+        ));
+      }
+    }
+  }
+
+  void updateExchangeRateCards(String currency) async {
+    dynamic response = await exchangeHandler.getExchangeRateInfo(currency);
+    print(response);
+    int count = 0;
+    for (dynamic item in response['rates']) {
+      String coin = item['asset_id_quote'];
+      if (constants.coins.contains(coin)) {
+        double rate = item['rate'];
+        String exchangeRateString =
+            '1 $coin = ${rate.toStringAsFixed(6)} $currency';
+        coinCards[count].updateLabel(exchangeRateString);
+        count++;
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    printExchangeRate();
-  }
-
-  void printExchangeRate() async {
-    var result = await exchangeHandler.getExchangeRateInfo('BTC', 'USD');
-    print(result);
+    selectedCurrency = 'USD';
+    initExchangeRateCards(selectedCurrency);
   }
 
   @override
@@ -67,9 +97,7 @@ class _PricePageState extends State<PricePage> {
           Expanded(
             flex: 5,
             child: Column(
-              children: const [
-                CoinCard(),
-              ],
+              children: coinCards,
             ),
           ),
           Expanded(

@@ -3,18 +3,18 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 const baseURL = 'https://rest.coinapi.io/v1/exchangerate';
-const apiKey = '23AACD27-E0E7-4EF7-95FB-9B9D9AD229EB';
+const apiKey = ''; //TODO: add API key
 
 class ExchangeHandler {
-  var client;
+  dynamic client;
 
   ExchangeHandler() {
     client = http.Client();
   }
 
-  Future<dynamic> getExchangeRateInfo(String coin, String currency) async {
+  Future<dynamic> getExchangeRateInfo(String currency) async {
     http.Response response = await client.get(
-      Uri.parse('$baseURL/$coin/$currency'),
+      Uri.parse('$baseURL/$currency'),
       headers: {'X-CoinAPI-Key': apiKey},
     );
 
